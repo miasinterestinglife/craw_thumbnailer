@@ -19,7 +19,7 @@ Next, add a thumbnailer entry at `/usr/share/thumbnailers`:
 touch /usr/share/thumbnailers/craw_thumbnailer.thumbnailer
 ```
 And add the following contents:
-```
+```desktop
 [Thumbnailer Entry]
 TryExec=/usr/bin/craw_thumbnailer
 Exec=/usr/bin/craw_thumbnailer -f %i -o %o
