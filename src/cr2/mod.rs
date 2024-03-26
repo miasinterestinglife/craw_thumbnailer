@@ -2,37 +2,37 @@ use crate::read_file;
 use image::load_from_memory_with_format;
 
 #[derive(Debug)]
-struct internalMeta{
+struct InternalMeta{
     byte_order: [u8;2],
     tiff_ofs: u32,
     cr2_ver: [u8;2],
     raw_ifd_ofs: u32,
-    ifds: Option<[Option<ifd_data>;4]>
+    ifds: Option<[Option<IFDData>;4]>
 }
 
 #[derive(Debug)]
-struct ifd_data{
+struct IFDData{
     num_entries: u16,
     ofs: u32,
-    entries: Option<Vec<ifd_entry>>,
+    entries: Option<Vec<IFDEntry>>,
     next_ifd_ofs: Option<u32>
 }
 
 #[derive(Debug)]
-struct ifd_entry{
+struct IFDEntry{
     tag_id: u16,
     pointer: u32
 }
 
-fn read_ifd(raw_data: &Vec<u8>, offset:&u32) -> ifd_data{
-    let mut data = ifd_data{
+fn read_ifd(raw_data: &Vec<u8>, offset:&u32) -> IFDData{
+    let mut data = IFDData{
         num_entries: 0,
         ofs: *offset,
         entries: Some(vec![]),
         next_ifd_ofs: None
     };
     data.num_entries = u16::from_le_bytes(raw_data[*offset as usize..=(*offset+1) as usize].try_into().unwrap());
-    let mut ifd_entries: Vec<ifd_entry> = vec![];
+    let mut ifd_entries: Vec<IFDEntry> = vec![];
     let last_ofs:usize = (data.ofs + 2+12*data.num_entries as u32) as usize;
     for n in 0..data.num_entries as usize{
         let ifd_ofs:usize;
@@ -44,15 +44,15 @@ fn read_ifd(raw_data: &Vec<u8>, offset:&u32) -> ifd_data{
         }
         let tag_id: u16 = u16::from_le_bytes(raw_data[ifd_ofs..=ifd_ofs+1].try_into().unwrap());
         let tag_pointer: u32 = u32::from_le_bytes(raw_data[ifd_ofs+8..=ifd_ofs+11].try_into().unwrap());
-        ifd_entries.push(ifd_entry {tag_id: tag_id, pointer: tag_pointer })
+        ifd_entries.push(IFDEntry {tag_id: tag_id, pointer: tag_pointer })
     }
     data.entries.as_mut().unwrap().append(&mut ifd_entries);
     data.next_ifd_ofs = Some(u32::from_le_bytes(raw_data[last_ofs..=last_ofs+3].try_into().unwrap()));
     data
 }
 
-fn get_file_header(raw_data: &Vec<u8>)->internalMeta{
-    let mut internal_data = internalMeta{
+fn get_file_header(raw_data: &Vec<u8>)->InternalMeta{
+    let mut internal_data = InternalMeta{
         byte_order: [0,0],
         tiff_ofs: 0,
         cr2_ver: [0,0],
