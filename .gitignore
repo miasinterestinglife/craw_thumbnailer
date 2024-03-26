@@ -1,3 +1,5 @@
 /target
 files/
 .vscode/
+test.png
+Cargo.lock
