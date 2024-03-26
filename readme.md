@@ -13,7 +13,7 @@ cargo build --release
 ```
 Copy the executable to the `/usr/bin/` directory:
 ```Shell
-sudo cp target/release/craw_thumbnailer usr/bin/
+sudo cp target/release/craw_thumbnailer /usr/bin/
 ```
 Next, add a thumbnailer entry at `/usr/share/thumbnailers`:
 ```Shell
