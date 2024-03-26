@@ -17,7 +17,7 @@ sudo cp target/release/craw_thumbnailer /usr/bin/
 ```
 Next, add a thumbnailer entry at `/usr/share/thumbnailers`:
 ```Shell
-touch /usr/share/thumbnailers/craw_thumbnailer.thumbnailer
+sudo touch /usr/share/thumbnailers/craw_thumbnailer.thumbnailer
 ```
 And add the following contents:
 ```desktop
