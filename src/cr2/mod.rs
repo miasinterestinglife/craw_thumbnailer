@@ -1,4 +1,5 @@
 use crate::read_file;
+use crate::{le_bytes_to_u16, le_bytes_to_u32};
 use image::load_from_memory_with_format;
 
 #[derive(Debug)]
@@ -31,7 +32,7 @@ fn read_ifd(raw_data: &Vec<u8>, offset:&u32) -> IFDData{
         entries: Some(vec![]),
         next_ifd_ofs: None
     };
-    data.num_entries = u16::from_le_bytes(raw_data[*offset as usize..=(*offset+1) as usize].try_into().unwrap());
+    data.num_entries = le_bytes_to_u16(&raw_data[*offset as usize..=(*offset+1) as usize]);
     let mut ifd_entries: Vec<IFDEntry> = vec![];
     let last_ofs:usize = (data.ofs + 2+12*data.num_entries as u32) as usize;
     for n in 0..data.num_entries as usize{
@@ -42,12 +43,12 @@ fn read_ifd(raw_data: &Vec<u8>, offset:&u32) -> IFDData{
         else {
             ifd_ofs = data.ofs as usize +  2+12*(n);
         }
-        let tag_id: u16 = u16::from_le_bytes(raw_data[ifd_ofs..=ifd_ofs+1].try_into().unwrap());
-        let tag_pointer: u32 = u32::from_le_bytes(raw_data[ifd_ofs+8..=ifd_ofs+11].try_into().unwrap());
+        let tag_id = le_bytes_to_u16(&raw_data[ifd_ofs..=ifd_ofs+1]);
+        let tag_pointer = le_bytes_to_u32(&raw_data[ifd_ofs+8..=ifd_ofs+11]);
         ifd_entries.push(IFDEntry {tag_id: tag_id, pointer: tag_pointer })
     }
     data.entries.as_mut().unwrap().append(&mut ifd_entries);
-    data.next_ifd_ofs = Some(u32::from_le_bytes(raw_data[last_ofs..=last_ofs+3].try_into().unwrap()));
+    data.next_ifd_ofs = Some(le_bytes_to_u32(&raw_data[last_ofs..=last_ofs+3]));
     data
 }
 
@@ -60,9 +61,9 @@ fn get_file_header(raw_data: &Vec<u8>)->InternalMeta{
         ifds: None
     };
     internal_data.byte_order = [raw_data[0], raw_data[1]];
-    internal_data.tiff_ofs = u32::from_le_bytes(raw_data[4..=7].try_into().unwrap());
+    internal_data.tiff_ofs = le_bytes_to_u32(&raw_data[4..=7]);
     internal_data.cr2_ver = [raw_data[0xa],raw_data[0xb]];
-    internal_data.raw_ifd_ofs = u32::from_le_bytes(raw_data[0xc..=0xf].try_into().unwrap());
+    internal_data.raw_ifd_ofs = le_bytes_to_u32(&raw_data[0xc..=0xf]);
     let ifd0 = read_ifd(&raw_data, &internal_data.tiff_ofs);
     let ifd1 = read_ifd(&raw_data, &ifd0.next_ifd_ofs.unwrap());
     let ifd2 = read_ifd(&raw_data, &ifd1.next_ifd_ofs.unwrap());
