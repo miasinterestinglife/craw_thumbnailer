@@ -3,19 +3,19 @@ An efficient Thumbnailer for Canon CR2 and CR3 files (CRW still in development) 
 # Installation
 First, make sure you have rustc and cargo installed.
 Then clone the repository:
-```
+```Shell
 git clone https://github.com/Frittierapparat/craw_thumbnailer.git
 ```
 Build the executable:
-```
+```Shell
 cargo build --release
 ```
 Copy the executable to the `/usr/bin/` directory:
-```
+```Shell
 sudo cp /target/release/craw_thumbnailer usr/bin/
 ```
 Next, add a thumbnailer entry at `/usr/share/thumbnailers`:
-```
+```Shell
 touch /usr/share/thumbnailers/craw_thumbnailer.thumbnailer
 ```
 And add the following contents:
