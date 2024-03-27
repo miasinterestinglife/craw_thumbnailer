@@ -72,7 +72,7 @@ fn get_file_header(raw_data: &Vec<u8>)->InternalMeta{
     internal_data
 }
 
-pub fn extract_thumb(file_path: &String, output: &String){
+pub fn extract_thumb(file_path: &String, output: &String, size: u16){
     let raw_data = read_file(file_path);
     let internal_data = get_file_header(&raw_data);
     let mut strip_ofs:u32=0;
@@ -95,7 +95,13 @@ pub fn extract_thumb(file_path: &String, output: &String){
     }
     let raw_img = &raw_data[strip_ofs as usize..=strip_ofs as usize+strip_cnt as usize];
     let mut img = load_from_memory_with_format(raw_img, image::ImageFormat::Jpeg).unwrap();
-    let size_factor:f32 = 256.0 / img.width() as f32;
+    let size_factor:f32;
+    if size != 0{
+        size_factor = size as f32 / img.width() as f32;
+    }
+    else{
+        size_factor = 1.0;
+    }
     img = img.thumbnail((img.width() as f32*size_factor)as u32, (img.width() as f32*size_factor)as u32);
     img.save_with_format(output, image::ImageFormat::Png).unwrap();
 }

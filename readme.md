@@ -23,7 +23,7 @@ And add the following contents:
 ```desktop
 [Thumbnailer Entry]
 TryExec=/usr/bin/craw_thumbnailer
-Exec=/usr/bin/craw_thumbnailer -f %i -o %o
+Exec=/usr/bin/craw_thumbnailer -f %i -o %o -s %s
 MimeType=image/x-canon-cr2;image/x-canon-cr3
 ```
 Finally, restart your file manager. (For example `nautilus -q`)

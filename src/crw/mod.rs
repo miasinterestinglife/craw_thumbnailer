@@ -2,7 +2,7 @@ use crate::read_file;
 
 
 
-pub fn extract_thumb(file_path: &String, output: &String){
+pub fn extract_thumb(file_path: &String, output: &String, size: &u16){
     let raw_file = read_file(&file_path);
     let byte_order: [u8;2] = [raw_file[0], raw_file[1]];
     let header_length: u32 = u32::from_le_bytes(raw_file[2..=5].try_into().unwrap());
