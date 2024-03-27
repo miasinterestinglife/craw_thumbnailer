@@ -19,29 +19,38 @@ fn read_file(file_path: &String) ->Vec<u8>{
     return data;
 }
 
-fn be_bytes_to_u32(bytes: &[u8]) -> u32 {
-    ((bytes[0] as u32) << 24)
-    | ((bytes[1] as u32) << 16)
-    | ((bytes[2] as u32) << 8)
-    | (bytes[3] as u32)
-}
-
-fn le_bytes_to_u32(bytes: &[u8]) -> u32{
-    (bytes[0] as u32)
+fn bytes_to_u32(bytes: &[u8], endianness: &[u8;2])->u32{
+    if endianness == &[0x49, 0x49]{
+        (bytes[0] as u32)
     | ((bytes[1] as u32)<<8)
     | ((bytes[2] as u32)<<16)
     | ((bytes[3] as u32)<<24)
+    }
+    else if endianness == &[0x4d,0x4d]{
+        ((bytes[0] as u32) << 24)
+    | ((bytes[1] as u32) << 16)
+    | ((bytes[2] as u32) << 8)
+    | (bytes[3] as u32)
+    }
+    else{
+        return 0 as u32
+    }
 }
 
-fn be_bytes_to_u16(bytes: &[u8]) -> u16{
-    ((bytes[0] as u16) << 8)
-    | (bytes[1] as u16)
-}
-
-fn le_bytes_to_u16(bytes: &[u8]) -> u16{
-    (bytes[0] as u16)
+fn bytes_to_u16(bytes: &[u8], endianness: &[u8;2])->u16{
+    if endianness == &[0x49,0x49]{
+        (bytes[0] as u16)
     | ((bytes[1] as u16)<<8)
+    }
+    else if endianness == &[0x4d,0x4d]{
+        ((bytes[0] as u16) << 8)
+    | (bytes[1] as u16)
+    }
+    else{
+        return 0 as u16
+    }
 }
+
 
 fn main() {
     let args = Args::parse();
