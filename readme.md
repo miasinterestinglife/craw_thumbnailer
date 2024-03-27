@@ -31,9 +31,9 @@ Finally, restart your file manager. (For example `nautilus -q`)
 
 # Basic Usage
 The program currently takes 3 arguments:
-'''
+```
 -f/--file: the input file
 -o/--output: the output file
 -s/--size: the width in pixels you want (leave empty for original size)
 -h/--help: display a basic help screen
-'''
+```
