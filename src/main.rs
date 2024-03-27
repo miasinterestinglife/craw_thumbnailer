@@ -1,6 +1,5 @@
 use clap::Parser;
 use std::fs;
-mod crw;
 mod cr2;
 mod cr3;
 
