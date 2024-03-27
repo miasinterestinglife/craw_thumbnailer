@@ -65,10 +65,7 @@ fn get_file_header(raw_data: &Vec<u8>)->InternalMeta{
     internal_data.cr2_ver = [raw_data[0xa],raw_data[0xb]];
     internal_data.raw_ifd_ofs = bytes_to_u32(&raw_data[0xc..=0xf], &internal_data.byte_order);
     let ifd0 = read_ifd(&raw_data, &internal_data.tiff_ofs, &internal_data);
-    let ifd1 = read_ifd(&raw_data, &ifd0.next_ifd_ofs.unwrap(), &internal_data);
-    let ifd2 = read_ifd(&raw_data, &ifd1.next_ifd_ofs.unwrap(), &internal_data);
-    let ifd3 = read_ifd(&raw_data, &ifd2.next_ifd_ofs.unwrap(), &internal_data);
-    internal_data.ifds = Some([Some(ifd0),Some(ifd1),Some(ifd2), Some(ifd3)]);
+    internal_data.ifds = Some([Some(ifd0),None,None,None]);
     internal_data
 }
 
