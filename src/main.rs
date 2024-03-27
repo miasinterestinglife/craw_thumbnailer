@@ -17,9 +17,9 @@ struct Args {
     size:u16
 }
 
-fn read_file(file_path: &String) ->Vec<u8>{
+fn read_file(file_path: &String) -> Vec<u8>{
     let data = fs::read(file_path).unwrap();
-    return data;
+    data
 }
 
 fn bytes_to_u32(bytes: &[u8], endianness: &[u8;2])->u32{
@@ -64,7 +64,7 @@ fn main() {
         crw::extract_thumb(&input, &output)
     }*/
     if input.ends_with("CR2")|| input.ends_with("cr2"){
-        cr2::extract_thumb(&input, &output, size)
+        cr2::extract_thumb(&input, &output, size);
     }
     if input.ends_with("CR3")|| input.ends_with("cr3"){
         cr3::extract_thumb(&input, &output, size)
