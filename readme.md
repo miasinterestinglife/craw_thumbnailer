@@ -1,4 +1,5 @@
 An efficient Thumbnailer for Canon CR2 and CR3 files (CRW still in development) by utilizing the included Thumbnails. No conversion needed.
+(currently only tested working for nautilus on Ubuntu and Fedora Workstation)
 
 # Installation
 First, make sure you have rustc and cargo installed.
@@ -27,3 +28,12 @@ Exec=/usr/bin/craw_thumbnailer -f %i -o %o -s %s
 MimeType=image/x-canon-cr2;image/x-canon-cr3
 ```
 Finally, restart your file manager. (For example `nautilus -q`)
+
+# Basic Usage
+The program currently takes 3 arguments:
+'''
+-f/--file: the input file
+-o/--output: the output file
+-s/--size: the width in pixels you want (leave empty for original size)
+-h/--help: display a basic help screen
+'''
