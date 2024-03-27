@@ -2,6 +2,16 @@ An efficient Thumbnailer for Canon CR2 and CR3 files (CRW still in development) 
 (currently only tested working for nautilus on Ubuntu and Fedora Workstation)
 
 # Installation
+## Using the .deb Package
+Download the .deb Package from the releases tab on the right. Then open a terminal in your Downloads folder. This can be done by right-clicking in your File Manager and clicking on `Open in Terminal` or by opening a Terminal and entering
+```Shell
+cd $HOME/Downloads/
+```
+To install the package, enter:
+```Shell
+sudo dpkg -i craw_thumbnailer.deb
+```
+## From source
 First, make sure you have rustc and cargo installed.
 Then clone the repository and move into it:
 ```Shell
