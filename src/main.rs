@@ -60,9 +60,6 @@ fn main() {
     let input = args.file;
     let output = args.output;
     let size = args.size;
-    /*if input.ends_with("CRW") || input.ends_with("crw"){
-        crw::extract_thumb(&input, &output)
-    }*/
     if input.ends_with("CR2")|| input.ends_with("cr2"){
         cr2::extract_thumb(&input, &output, size);
     }
