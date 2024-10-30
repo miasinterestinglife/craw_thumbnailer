@@ -10,6 +10,8 @@ pub fn extract_thumb(file_path: &String, output: &String, size: u16) -> Result<(
         Some(idx) => idx-4,
         _ => return Err(Error::new(ErrorKind::NotFound, "PICT Header not found, file may be corrupted."))
     };
+
+    //get length of JPEG Data and extract it
     let jpeg_size: u32 = bytes_to_u32(&raw_file[index+20..=index+23], &[0x4d,0x4d]);
     let raw_img: &[u8] = &raw_file[index+24..=index+24+jpeg_size as usize];
 

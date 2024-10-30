@@ -43,6 +43,7 @@ struct IFDEntry{
 }
 
 fn read_ifd(raw_data: &Vec<u8>, offset:&u32, internal_data: &InternalMeta) -> IFDData{
+    //!Reads the IFD (Image File Directory) in the TIFF-like CR2 file (also works for normal TIFF files, but usage may vary)
     let mut data = IFDData{
         num_entries: 0,
         ofs: *offset,
@@ -70,6 +71,7 @@ fn read_ifd(raw_data: &Vec<u8>, offset:&u32, internal_data: &InternalMeta) -> IF
 }
 
 fn get_file_header(raw_data: &Vec<u8>)->InternalMeta{
+    //!Get TIFF file header, made for use with CR2 files, partially works with regular TIFF
     let mut internal_data: InternalMeta = InternalMeta{
         byte_order: [0,0],
         tiff_ofs: 0,
@@ -87,6 +89,7 @@ fn get_file_header(raw_data: &Vec<u8>)->InternalMeta{
 }
 
 fn read_file(file_path: &String) -> Result<Vec<u8>, Error>{
+    //!Read the file from specified path and return a Vec<u8> for later use
     let data = fs::read(file_path);
     match data{
         Ok(bytes) => return Ok(bytes),
@@ -95,6 +98,7 @@ fn read_file(file_path: &String) -> Result<Vec<u8>, Error>{
 }
 
 fn bytes_to_u32(bytes: &[u8], endianness: &[u8;2])->u32{
+    //!Converts 4 8bit unsigned integers into a single unsigned 32bit Integer
     if endianness == &[0x49, 0x49]{
         (bytes[0] as u32)
     | ((bytes[1] as u32)<<8)
@@ -113,6 +117,7 @@ fn bytes_to_u32(bytes: &[u8], endianness: &[u8;2])->u32{
 }
 
 fn bytes_to_u16(bytes: &[u8], endianness: &[u8;2])->u16{
+    //!Converts 2 8bit unsigned integers into a single unsigned 16bit Integer
     if endianness == &[0x49,0x49]{
         (bytes[0] as u16)
     | ((bytes[1] as u16)<<8)
@@ -127,6 +132,7 @@ fn bytes_to_u16(bytes: &[u8], endianness: &[u8;2])->u16{
 }
 
 fn save_image(raw_img: &[u8], output:&String, size:u16, orientation:u32)->Result<(), Error>{
+    //!Sets image orientation, sizes it down and saves it in the output location
     let loaded_img = load_from_memory_with_format(raw_img, image::ImageFormat::Jpeg);
     let mut img = match loaded_img{
         Ok(image) => image,
