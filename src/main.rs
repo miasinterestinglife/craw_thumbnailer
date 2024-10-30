@@ -1,5 +1,8 @@
+use clap::error::Result;
 use clap::Parser;
 use std::fs;
+use std::io::{Error, ErrorKind};
+use image::load_from_memory_with_format;
 mod cr2;
 mod cr3;
 
@@ -83,9 +86,12 @@ fn get_file_header(raw_data: &Vec<u8>)->InternalMeta{
     internal_data
 }
 
-fn read_file(file_path: &String) -> Vec<u8>{
-    let data = fs::read(file_path).unwrap();
-    data
+fn read_file(file_path: &String) -> Result<Vec<u8>, Error>{
+    let data = fs::read(file_path);
+    match data{
+        Ok(bytes) => return Ok(bytes),
+        Err(error) => return Err(error)
+    }
 }
 
 fn bytes_to_u32(bytes: &[u8], endianness: &[u8;2])->u32{
@@ -120,16 +126,47 @@ fn bytes_to_u16(bytes: &[u8], endianness: &[u8;2])->u16{
     }
 }
 
+fn save_image(raw_img: &[u8], output:&String, size:u16, orientation:u32)->Result<(), Error>{
+    let mut img = load_from_memory_with_format(raw_img, image::ImageFormat::Jpeg).unwrap();
 
-fn main() {
+    match orientation{
+        /*
+                    1: rotate 0 degrees
+                    6: rotate 90 degrees
+                    3: rotate 180 degrees
+                    8: rotate 270 degrees 
+                    */
+                    6 => img = img.rotate90(),
+                    3 => img = img.rotate180(),
+                    8 => img = img.rotate270(),
+                    _ => {}
+    }
+    let size_factor:f32;
+    if size != 0{
+        size_factor = size as f32 / img.width() as f32;
+    }
+    else{
+        size_factor = 1.0;
+    }
+    img = img.thumbnail((img.width() as f32*size_factor)as u32, (img.width() as f32*size_factor)as u32);
+    match img.save_with_format(output, image::ImageFormat::Png){
+        Ok(()) => {},
+        Err(_) => {return Err(Error::new(ErrorKind::Other, "Failed saving the Image"))}
+    }
+    Ok(())
+}
+
+
+fn main() -> Result<(), Error>{
     let args = Args::parse();
     let input: String = args.file;
     let output: String = args.output;
     let size: u16 = args.size;
     if input.ends_with("CR2")|| input.ends_with("cr2"){
-        cr2::extract_thumb(&input, &output, size);
+        cr2::extract_thumb(&input, &output, size)?;
     }
     if input.ends_with("CR3")|| input.ends_with("cr3"){
-        cr3::extract_thumb(&input, &output, size)
+        cr3::extract_thumb(&input, &output, size)?;
     }
+    Ok(())
 }
