@@ -67,7 +67,7 @@ fn read_ifd(raw_data: &Vec<u8>, offset:&u32, internal_data: &InternalMeta) -> IF
 }
 
 fn get_file_header(raw_data: &Vec<u8>)->InternalMeta{
-    let mut internal_data = InternalMeta{
+    let mut internal_data: InternalMeta = InternalMeta{
         byte_order: [0,0],
         tiff_ofs: 0,
         cr2_ver: [0,0],
@@ -78,7 +78,7 @@ fn get_file_header(raw_data: &Vec<u8>)->InternalMeta{
     internal_data.tiff_ofs = bytes_to_u32(&raw_data[4..=7], &internal_data.byte_order);
     internal_data.cr2_ver = [raw_data[0xa],raw_data[0xb]];
     internal_data.raw_ifd_ofs = bytes_to_u32(&raw_data[0xc..=0xf], &internal_data.byte_order);
-    let ifd0 = read_ifd(&raw_data, &internal_data.tiff_ofs, &internal_data);
+    let ifd0: IFDData = read_ifd(&raw_data, &internal_data.tiff_ofs, &internal_data);
     internal_data.ifds = Some([Some(ifd0),None,None,None]);
     internal_data
 }
@@ -123,9 +123,9 @@ fn bytes_to_u16(bytes: &[u8], endianness: &[u8;2])->u16{
 
 fn main() {
     let args = Args::parse();
-    let input = args.file;
-    let output = args.output;
-    let size = args.size;
+    let input: String = args.file;
+    let output: String = args.output;
+    let size: u16 = args.size;
     if input.ends_with("CR2")|| input.ends_with("cr2"){
         cr2::extract_thumb(&input, &output, size);
     }
