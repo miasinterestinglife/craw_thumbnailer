@@ -127,7 +127,11 @@ fn bytes_to_u16(bytes: &[u8], endianness: &[u8;2])->u16{
 }
 
 fn save_image(raw_img: &[u8], output:&String, size:u16, orientation:u32)->Result<(), Error>{
-    let mut img = load_from_memory_with_format(raw_img, image::ImageFormat::Jpeg).unwrap();
+    let loaded_img = load_from_memory_with_format(raw_img, image::ImageFormat::Jpeg);
+    let mut img = match loaded_img{
+        Ok(image) => image,
+        Err(_) => return Err(Error::new(ErrorKind::Other, "Failed loading the Image"))
+    };
 
     match orientation{
         /*
