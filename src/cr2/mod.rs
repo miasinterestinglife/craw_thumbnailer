@@ -32,19 +32,6 @@ pub fn extract_thumb(file_path: &String, output: &String, size: u16)-> Result<()
         }
     }
     let raw_img = &raw_data[strip_ofs as usize..=strip_ofs as usize+strip_cnt as usize];
-    /*let mut img = load_from_memory_with_format(raw_img, image::ImageFormat::Jpeg).unwrap();
-    let size_factor:f32;
-    if size != 0{
-        size_factor = size as f32 / img.width() as f32;
-    }
-    else{
-        size_factor = 1.0;
-    }
-    img = img.thumbnail((img.width() as f32*size_factor)as u32, (img.width() as f32*size_factor)as u32);
-    match img.save_with_format(output, image::ImageFormat::Png){
-        Ok(()) => {},
-        Err(_) => {return Err(Error::new(ErrorKind::Other, "Failed saving the Image"))}
-    }*/
     save_image(raw_img, output, size, 1)?;
     Ok(())
 }
