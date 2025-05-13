@@ -35,6 +35,7 @@ struct IFDData{
     next_ifd_ofs: Option<u32>
 }
 
+//the second field is called pointer because it usually points to data but can also contain data itself, depending on the Tag
 #[derive(Debug)]
 struct IFDEntry{
     tag_id: u16,
@@ -88,7 +89,7 @@ fn get_file_header(raw_data: &Vec<u8>)->InternalMeta{
 }
 
 fn read_file(file_path: &String) -> Result<Vec<u8>, Error>{
-    //!Read the file from specified path and return a Result<Vec<u8>> for later use
+    //!Read the file from specified path and return a Result<Vec<u8>>
     let data = fs::read(file_path);
     match data{
         Ok(bytes) => return Ok(bytes),
@@ -132,7 +133,7 @@ fn bytes_to_u16(bytes: &[u8], endianness: &[u8;2])->u16{
 
 fn save_image(raw_img: &[u8], output:&String, size:u16, orientation:u32)->Result<(), Error>{
     //!Sets image orientation, sizes it down and saves it in the output location
-    //!The default value for the orientation should be 1, as that does not change it at all
+    //!The default value for the orientation should be 1, as that does not change it at all (horizontal)
     let loaded_img = load_from_memory_with_format(raw_img, image::ImageFormat::Jpeg);
     let mut img = match loaded_img{
         Ok(image) => image,

@@ -5,10 +5,10 @@ use std::io::{Error, ErrorKind};
 pub fn extract_thumb(file_path: &String, output: &String, size: u16) -> Result<(),Error>{
     let raw_file = read_file(&file_path)?;
 
-    //find the location of the PICT header, defining the position of the full-size JPEG
+    //find the location of the PRVW (0x50 52 56 57) header, defining the position of the full-size JPEG
     let index = match raw_file.windows(4).position(|w| w==[0x50,0x52,0x56,0x57]){
         Some(idx) => idx-4,
-        _ => return Err(Error::new(ErrorKind::NotFound, "PICT Header not found, file may be corrupted."))
+        _ => return Err(Error::new(ErrorKind::NotFound, "PRVW Header not found, file may be corrupted."))
     };
 
     //get length of JPEG Data and extract it
@@ -18,9 +18,11 @@ pub fn extract_thumb(file_path: &String, output: &String, size: u16) -> Result<(
     //get Metadata to show correct Orientation
     let mut exif_index = 0;
     let mut exif_end_idx = 0;
+    //find CMT1 (0x43 4D 54 31) header, beginning of Exif IFD 0
     match raw_file.windows(4).position(|w| w==[0x43, 0x4D, 0x54, 0x31]){
         Some(index) => {
             exif_index = index+4;
+            //CMT2 comes right after CMT1, so it is used to find the end of the Exif IFD0
             match raw_file.windows(4).position(|w| w==[0x43, 0x4D, 0x54, 0x32]){
                 Some(index) => {
                     exif_end_idx = index-1;
@@ -30,13 +32,14 @@ pub fn extract_thumb(file_path: &String, output: &String, size: u16) -> Result<(
         },
         _ => {}
     }
+    //set a default orientation in case there is no usable exif data
     let mut orientation=1;
-    //if the exif is not found, it should still be possible to output the thumbnail,
-    //even if it might be the wrong orientation
     if exif_index != 0 && exif_end_idx != 0{
+        //extract the raw exif IFD
         let raw_exif: &[u8] = &raw_file[exif_index..=exif_end_idx];
         let exif_internal_data = get_file_header(&raw_exif.to_vec());
     
+        //search for the Exif Entry with the ID 274, containing the Orientation
         for n in 0..exif_internal_data.ifds.as_ref().unwrap()[0].as_ref().unwrap().num_entries as usize{
             let entry = &exif_internal_data.ifds.as_ref().unwrap()[0].as_ref().unwrap().entries.as_ref().unwrap()[n];
             if entry.tag_id == 274{
