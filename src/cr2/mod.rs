@@ -23,14 +23,18 @@ pub fn extract_thumb(file_path: &String, output: &String, size: u16)-> Result<()
         let entry: &IFDEntry = &ifd_0.entries.as_ref().unwrap()[n];
         match entry.tag_id{
             273 => {
+                //offset of the embedded jpeg
                 strip_ofs = entry.pointer;
             }
             279 => {
+                //number of pixels of embedded jpeg
                 strip_cnt = entry.pointer
             }
             _ => {}
         }
     }
+
+    //extract data from beginning of offset to the end (strip_ofs+strip_cnt)
     let raw_img = &raw_data[strip_ofs as usize..=strip_ofs as usize+strip_cnt as usize];
     save_image(raw_img, output, size, 1)?;
     Ok(())

@@ -1,4 +1,3 @@
-use clap::error::Result;
 use clap::Parser;
 use std::fs;
 use std::io::{Error, ErrorKind};
@@ -89,7 +88,7 @@ fn get_file_header(raw_data: &Vec<u8>)->InternalMeta{
 }
 
 fn read_file(file_path: &String) -> Result<Vec<u8>, Error>{
-    //!Read the file from specified path and return a Vec<u8> for later use
+    //!Read the file from specified path and return a Result<Vec<u8>> for later use
     let data = fs::read(file_path);
     match data{
         Ok(bytes) => return Ok(bytes),
@@ -142,15 +141,15 @@ fn save_image(raw_img: &[u8], output:&String, size:u16, orientation:u32)->Result
 
     match orientation{
         /*
-                    1: rotate 0 degrees
-                    6: rotate 90 degrees
-                    3: rotate 180 degrees
-                    8: rotate 270 degrees 
-                    */
-                    6 => img = img.rotate90(),
-                    3 => img = img.rotate180(),
-                    8 => img = img.rotate270(),
-                    _ => {}
+        1: rotate 0 degrees
+        6: rotate 90 degrees
+        3: rotate 180 degrees
+        8: rotate 270 degrees 
+        */
+        6 => img = img.rotate90(),
+        3 => img = img.rotate180(),
+        8 => img = img.rotate270(),
+        _ => {}
     }
     let size_factor:f32;
     if size != 0{
