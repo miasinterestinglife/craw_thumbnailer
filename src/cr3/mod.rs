@@ -1,5 +1,4 @@
-use crate::{get_file_header, read_file, save_image};
-use crate::bytes_to_u32;
+use crate::{get_file_header, read_file, save_image, bytes_to_u32};
 use std::io::{Error, ErrorKind};
 
 pub fn extract_thumb(file_path: &String, output: &String, size: u16) -> Result<(),Error>{

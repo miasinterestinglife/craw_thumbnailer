@@ -34,6 +34,10 @@ pub fn extract_thumb(file_path: &String, output: &String, size: u16)-> Result<()
         }
     }
 
+    if strip_ofs==0||strip_cnt==0{
+        return Err(Error::new(ErrorKind::NotFound, format!("Image data could not be found in the IFD Entries, Strip Offset is: {}, Strip Count is: {}.", strip_ofs, strip_cnt)));
+    }
+
     //extract data from beginning of offset to the end (strip_ofs+strip_cnt)
     let raw_img = &raw_data[strip_ofs as usize..=strip_ofs as usize+strip_cnt as usize];
     save_image(raw_img, output, size, 1)?;
