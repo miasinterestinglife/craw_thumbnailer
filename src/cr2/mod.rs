@@ -7,7 +7,7 @@ use std::io::{Error, ErrorKind};
 pub fn extract_thumb(file_path: &String, output: &String, size: u16)-> Result<(), Error>{
     let raw_data = read_file(file_path)?;
     let internal_data = get_file_header(&raw_data);
-    let mut strip_ofs:u32=0;
+    let mut img_start:u32=0;
     let mut strip_cnt:u32=0;
 
     let ifd_0: &IFDData;
@@ -21,10 +21,11 @@ pub fn extract_thumb(file_path: &String, output: &String, size: u16)-> Result<()
 
     for n in 0..ifd_0.num_entries as usize{
         let entry: &IFDEntry = &ifd_0.entries.as_ref().unwrap()[n];
+        println!("{}",entry.tag_id);
         match entry.tag_id{
             273 => {
                 //offset of the embedded jpeg
-                strip_ofs = entry.pointer;
+                img_start = entry.pointer;
             }
             279 => {
                 //number of pixels of embedded jpeg
@@ -34,12 +35,12 @@ pub fn extract_thumb(file_path: &String, output: &String, size: u16)-> Result<()
         }
     }
 
-    if strip_ofs==0||strip_cnt==0{
-        return Err(Error::new(ErrorKind::NotFound, format!("Image data could not be found in the IFD Entries, Strip Offset is: {}, Strip Count is: {}.", strip_ofs, strip_cnt)));
+    if img_start==0||strip_cnt==0{
+        return Err(Error::new(ErrorKind::NotFound, format!("Image data could not be found in the IFD Entries, Strip Offset is: {}, Strip Count is: {}.", img_start, strip_cnt)));
     }
-
+    let img_end = img_start + strip_cnt;
     //extract data from beginning of offset to the end (strip_ofs+strip_cnt)
-    let raw_img = &raw_data[strip_ofs as usize..=strip_ofs as usize+strip_cnt as usize];
+    let raw_img = &raw_data[img_start as usize..img_end as usize];
     save_image(raw_img, output, size, 1)?;
     Ok(())
 }

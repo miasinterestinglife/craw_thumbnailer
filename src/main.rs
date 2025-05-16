@@ -41,7 +41,7 @@ struct IFDData{
 }
 impl IFDData{
     pub fn new()->IFDData{
-        return IFDData{num_entries: 0, ofs: 0, entries: None, next_ifd_ofs: None};
+        return IFDData{num_entries: 0, ofs: 0, entries: Some(vec![]), next_ifd_ofs: None};
     }
 }
 
