@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "~4", features = ["derive"]}
-image = {version = "~0", features = ["jpeg", "png"], default_features=false}
+image = {version = "~0", features = ["jpeg", "png"], default-features=false}
