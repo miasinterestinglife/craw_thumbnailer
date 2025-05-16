@@ -26,6 +26,11 @@ struct InternalMeta{
     raw_ifd_ofs: u32,
     ifds: Option<[Option<IFDData>;4]>
 }
+impl InternalMeta{
+    pub fn new() -> InternalMeta{
+        return InternalMeta { byte_order: [0,0], tiff_ofs: 0, cr2_ver: [0,0], raw_ifd_ofs: 0, ifds: None }
+    }
+}
 
 #[derive(Debug)]
 struct IFDData{
@@ -33,6 +38,11 @@ struct IFDData{
     ofs: u32,
     entries: Option<Vec<IFDEntry>>,
     next_ifd_ofs: Option<u32>
+}
+impl IFDData{
+    pub fn new()->IFDData{
+        return IFDData{num_entries: 0, ofs: 0, entries: None, next_ifd_ofs: None};
+    }
 }
 
 //the second field is called pointer because it usually points to data but can also contain data itself, depending on the Tag
@@ -44,12 +54,8 @@ struct IFDEntry{
 
 fn read_ifd(raw_data: &Vec<u8>, offset:&u32, internal_data: &InternalMeta) -> IFDData{
     //!Reads the IFD (Image File Directory) in the TIFF-like CR2 file (also works for normal TIFF files, but usage may vary)
-    let mut data = IFDData{
-        num_entries: 0,
-        ofs: *offset,
-        entries: Some(vec![]),
-        next_ifd_ofs: None
-    };
+    let mut data = IFDData::new();
+    data.ofs = *offset;
     data.num_entries = bytes_to_u16(&raw_data[*offset as usize..=(*offset+1) as usize], &internal_data.byte_order);
     let mut ifd_entries: Vec<IFDEntry> = vec![];
     let last_ofs:usize = (data.ofs + 2+12*data.num_entries as u32) as usize;
@@ -72,13 +78,7 @@ fn read_ifd(raw_data: &Vec<u8>, offset:&u32, internal_data: &InternalMeta) -> IF
 
 fn get_file_header(raw_data: &Vec<u8>)->InternalMeta{
     //!Get TIFF file header, made for use with CR2 files, partially works with regular TIFF
-    let mut internal_data: InternalMeta = InternalMeta{
-        byte_order: [0,0],
-        tiff_ofs: 0,
-        cr2_ver: [0,0],
-        raw_ifd_ofs: 0,
-        ifds: None
-    };
+    let mut internal_data = InternalMeta::new();
     internal_data.byte_order = [raw_data[0], raw_data[1]];
     internal_data.tiff_ofs = bytes_to_u32(&raw_data[4..=7], &internal_data.byte_order);
     internal_data.cr2_ver = [raw_data[0xa],raw_data[0xb]];
