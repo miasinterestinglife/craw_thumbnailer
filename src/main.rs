@@ -2,6 +2,7 @@ use clap::Parser;
 use std::fs;
 use std::io::{Error, ErrorKind};
 use image::load_from_memory_with_format;
+mod crw;
 mod cr2;
 mod cr3;
 
@@ -52,11 +53,11 @@ struct IFDEntry{
     pointer: u32
 }
 
-fn read_ifd(raw_data: &Vec<u8>, offset:&u32, internal_data: &InternalMeta) -> IFDData{
+fn read_ifd(raw_data: &Vec<u8>, offset:&u32, byte_order: &[u8;2]) -> IFDData{
     //!Reads the IFD (Image File Directory) in the TIFF-like CR2 file (also works for normal TIFF files, but usage may vary)
     let mut data = IFDData::new();
     data.ofs = *offset;
-    data.num_entries = bytes_to_u16(&raw_data[*offset as usize..=(*offset+1) as usize], &internal_data.byte_order);
+    data.num_entries = bytes_to_u16(&raw_data[*offset as usize..=(*offset+1) as usize], byte_order);
     let mut ifd_entries: Vec<IFDEntry> = vec![];
     let last_ofs:usize = (data.ofs + 2+12*data.num_entries as u32) as usize;
     for n in 0..data.num_entries as usize{
@@ -67,12 +68,12 @@ fn read_ifd(raw_data: &Vec<u8>, offset:&u32, internal_data: &InternalMeta) -> IF
         else {
             ifd_ofs = data.ofs as usize +  2+12*(n);
         }
-        let tag_id = bytes_to_u16(&raw_data[ifd_ofs..=ifd_ofs+1], &internal_data.byte_order);
-        let tag_pointer = bytes_to_u32(&raw_data[ifd_ofs+8..=ifd_ofs+11], &internal_data.byte_order);
+        let tag_id = bytes_to_u16(&raw_data[ifd_ofs..=ifd_ofs+1], byte_order);
+        let tag_pointer = bytes_to_u32(&raw_data[ifd_ofs+8..=ifd_ofs+11], byte_order);
         ifd_entries.push(IFDEntry {tag_id: tag_id, pointer: tag_pointer })
     }
     data.entries.as_mut().unwrap().append(&mut ifd_entries);
-    data.next_ifd_ofs = Some(bytes_to_u32(&raw_data[last_ofs..=last_ofs+3], &internal_data.byte_order));
+    data.next_ifd_ofs = Some(bytes_to_u32(&raw_data[last_ofs..=last_ofs+3], byte_order));
     data
 }
 
@@ -83,7 +84,7 @@ fn get_file_header(raw_data: &Vec<u8>)->InternalMeta{
     internal_data.tiff_ofs = bytes_to_u32(&raw_data[4..=7], &internal_data.byte_order);
     internal_data.cr2_ver = [raw_data[0xa],raw_data[0xb]];
     internal_data.raw_ifd_ofs = bytes_to_u32(&raw_data[0xc..=0xf], &internal_data.byte_order);
-    let ifd0: IFDData = read_ifd(&raw_data, &internal_data.tiff_ofs, &internal_data);
+    let ifd0: IFDData = read_ifd(&raw_data, &internal_data.tiff_ofs, &internal_data.byte_order);
     internal_data.ifds = Some([Some(ifd0),None,None,None]);
     internal_data
 }
@@ -173,11 +174,17 @@ fn main() -> Result<(), Error>{
     let input: String = args.file;
     let output: String = args.output;
     let size: u16 = args.size;
-    if input.ends_with("CR2")|| input.ends_with("cr2"){
+    if input.ends_with("CRW") || input.ends_with("crw"){
+        crw::extract_thumb(&input, &output, size)?;
+    }
+    else if input.ends_with("CR2")|| input.ends_with("cr2"){
         cr2::extract_thumb(&input, &output, size)?;
     }
-    if input.ends_with("CR3")|| input.ends_with("cr3"){
+    else if input.ends_with("CR3")|| input.ends_with("cr3"){
         cr3::extract_thumb(&input, &output, size)?;
+    }
+    else{
+        return Err(Error::new(ErrorKind::Unsupported, "Unknown File type, are you sure that this is a Canon RAW File?"))
     }
     Ok(())
 }
