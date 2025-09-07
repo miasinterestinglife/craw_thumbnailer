@@ -19,7 +19,7 @@ sudo apt install ./craw_thumbnailer.deb
 First, make sure you have rustc and cargo installed.
 Then clone the repository and move into it:
 ```Shell
-git clone https://github.com/Frittierapparat/craw_thumbnailer.git
+git clone https://github.com/miasinterestinglife/craw_thumbnailer.git
 cd craw_thumbnailer
 ```
 Build the executable:
