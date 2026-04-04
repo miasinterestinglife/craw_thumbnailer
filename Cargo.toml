@@ -8,3 +8,9 @@ edition = "2021"
 [dependencies]
 clap = { version = "~4", features = ["derive"]}
 image = {version = "~0", features = ["jpeg", "png"], default-features=false}
+
+[profile.release]
+opt-level=3
+lto=true
+codegen-units=1
+strip=true
