@@ -64,7 +64,7 @@ Cameras known to be affected by this (program will currently crash when encounte
     - A570
     - A610
     - A620
-    - A630 (*C*anon*H*ack*D*evelopment*K*it - CHDK)
+    - A630 (**C**anon**H**ack**D**evelopment**K**it - CHDK)
     - A650 (CHDK)
     - A710
     - A720
