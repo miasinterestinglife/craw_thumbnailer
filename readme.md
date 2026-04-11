@@ -56,3 +56,24 @@ The program currently takes 3 arguments:
 -s/--size: the width in pixels you want (leave empty for original size)
 -h/--help: display a basic help screen
 ```
+# Known Issues
+For an unknown reason, some cameras create files with the CRW extension that contain an undocumented file structure.
+Cameras known to be affected by this (program will currently crash when encountering these):
+- Canon PowerShot Series:
+    - A550
+    - A570
+    - A610
+    - A620
+    - A630 (*C*anon*H*ack*D*evelopment*K*it - CHDK)
+    - A650 (CHDK)
+    - A710
+    - A720
+    - G7
+    - Pro 70
+    - S2 IS
+    - S3 IS
+    - S5 IS
+    - SD750
+    - SD950
+    - SX110 IS (CHDK)
+- Canon IXUS 900 TI (CHDK)
