@@ -1,12 +1,11 @@
 use crate::read_file;
 use crate::get_file_header;
 use crate::save_image;
-use crate::{IFDData, IFDEntry};
-use std::io::{Error, ErrorKind};
+use crate::{IFDData, CRAWError};
 
-pub fn extract_thumb(file_path: &String, output: &String, size: u16)-> Result<(), Error>{
+pub fn extract_thumb(file_path: &String, output: &String, size: u16)-> Result<(), CRAWError>{
     let raw_data = read_file(file_path)?;
-    let internal_data = get_file_header(&raw_data);
+    let internal_data = get_file_header(&raw_data)?;
     let mut img_start:u32=0;
     let mut strip_cnt:u32=0;
 
@@ -14,13 +13,16 @@ pub fn extract_thumb(file_path: &String, output: &String, size: u16)-> Result<()
     match &internal_data.ifds{
         Some(ifds) => match &ifds[0]{
             Some(ifd) => ifd_0 = &ifd,
-            _ => {return Err(Error::new(ErrorKind::NotFound, "Unable to find IFD0, file may be corrupted"))}
+            _ => {return Err(CRAWError::IFD0NotFound)}
         }
-        _ => {return Err(Error::new(ErrorKind::NotFound, "Unable to find the list of IFDs, file may be corrupted"));}
+        _ => {return Err(CRAWError::IFDListNotFound);}
     }
 
     for n in 0..ifd_0.num_entries as usize{
-        let entry: &IFDEntry = &ifd_0.entries.as_ref().unwrap()[n];
+        let entry = match &ifd_0.entries{
+            Some(entries) => &entries[n],
+            None => return Err(CRAWError::IFDDataEntriesNotDefined)
+        };
         println!("{}",entry.tag_id);
         match entry.tag_id{
             273 => {
@@ -36,7 +38,7 @@ pub fn extract_thumb(file_path: &String, output: &String, size: u16)-> Result<()
     }
 
     if img_start==0||strip_cnt==0{
-        return Err(Error::new(ErrorKind::NotFound, format!("Image data could not be found in the IFD Entries, Strip Offset is: {}, Strip Count is: {}.", img_start, strip_cnt)));
+        return Err(CRAWError::CR2ImageDataNotFound { strip_ofs: img_start, strip_count: strip_cnt });
     }
     let img_end = img_start + strip_cnt;
     //extract data from beginning of offset to the end (strip_ofs+strip_cnt)

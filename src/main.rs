@@ -1,10 +1,46 @@
 use clap::Parser;
 use std::fs;
-use std::io::{Error, ErrorKind};
 use image::load_from_memory_with_format;
 mod crw;
 mod cr2;
 mod cr3;
+
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum CRAWError{
+    #[error("IFDData entry Vec not defined.")]
+    IFDDataEntriesNotDefined,
+    #[error("Failed to save image")]
+    ImageSavingError(#[from] image::ImageError),
+    #[error("IO Error")]
+    IOError(#[from] std::io::Error),
+    #[error("IFD Root Directory is out of bounds")]
+    RootDirOutOfBoundsError,
+    #[error("Could not find Thumbnail IFD Entry")]
+    ThumbnailIfdEntryNotFound,
+    #[error("CR3 PRVW Header not found")]
+    CR3PRVWHeaderNotFound,
+    #[error("Index of PRVW Header is {0}, file may be corrupted")]
+    CR3PRVWHeaderIndexError(usize),
+    #[error("The detected size of the jpeg is {detected_size:?}, starting at {start:?}. The raw CR3 File has a length of {file_length:?}.")]
+    JPEGOutOfBoundsError{
+        detected_size: u32,
+        start: usize,
+        file_length: usize
+    },
+    #[error("Orientation EXIF Entry not found")]
+    OrientationNotFound,
+    #[error("Unable to find IFD0, file may be corrupted")]
+    IFD0NotFound,
+    #[error("Unable to find list of IFDS, file may be corrupted")]
+    IFDListNotFound,
+    #[error("Image data could not be found in the IFD Entries, Strip Offset is: {strip_ofs:?}, Strip Count is: {strip_count:?}.")]
+    CR2ImageDataNotFound{
+        strip_ofs: u32,
+        strip_count: u32
+    }
+}
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -53,7 +89,7 @@ struct IFDEntry{
     pointer: u32
 }
 
-fn read_ifd(raw_data: &Vec<u8>, offset:&u32, byte_order: &[u8;2]) -> IFDData{
+fn read_ifd(raw_data: &Vec<u8>, offset:&u32, byte_order: &[u8;2]) -> Result<IFDData, CRAWError>{
     //!Reads the IFD (Image File Directory) in the TIFF-like CR2 file (also works for normal TIFF files, but usage may vary)
     let mut data = IFDData::new();
     data.ofs = *offset;
@@ -72,29 +108,31 @@ fn read_ifd(raw_data: &Vec<u8>, offset:&u32, byte_order: &[u8;2]) -> IFDData{
         let tag_pointer = bytes_to_u32(&raw_data[ifd_ofs+8..=ifd_ofs+11], byte_order);
         ifd_entries.push(IFDEntry {tag_id: tag_id, pointer: tag_pointer })
     }
-    data.entries.as_mut().unwrap().append(&mut ifd_entries);
+    match data.entries{
+        Some(ref mut entries) => entries.append(&mut ifd_entries),
+        None => return Err(CRAWError::IFDDataEntriesNotDefined)
+    }
     data.next_ifd_ofs = Some(bytes_to_u32(&raw_data[last_ofs..=last_ofs+3], byte_order));
-    data
+    Ok(data)
 }
 
-fn get_file_header(raw_data: &Vec<u8>)->InternalMeta{
+fn get_file_header(raw_data: &Vec<u8>)-> Result<InternalMeta, CRAWError>{
     //!Get TIFF file header, made for use with CR2 files, partially works with regular TIFF
     let mut internal_data = InternalMeta::new();
     internal_data.byte_order = [raw_data[0], raw_data[1]];
     internal_data.tiff_ofs = bytes_to_u32(&raw_data[4..=7], &internal_data.byte_order);
     internal_data.cr2_ver = [raw_data[0xa],raw_data[0xb]];
     internal_data.raw_ifd_ofs = bytes_to_u32(&raw_data[0xc..=0xf], &internal_data.byte_order);
-    let ifd0: IFDData = read_ifd(&raw_data, &internal_data.tiff_ofs, &internal_data.byte_order);
+    let ifd0: IFDData = read_ifd(&raw_data, &internal_data.tiff_ofs, &internal_data.byte_order)?;
     internal_data.ifds = Some([Some(ifd0),None,None,None]);
-    internal_data
+    Ok(internal_data)
 }
 
-fn read_file(file_path: &String) -> Result<Vec<u8>, Error>{
+fn read_file(file_path: &String) -> Result<Vec<u8>, CRAWError>{
     //!Read the file from specified path and return a Result<Vec<u8>>
-    let data = fs::read(file_path);
-    match data{
+    match fs::read(file_path){
         Ok(bytes) => return Ok(bytes),
-        Err(error) => return Err(error)
+        Err(error) => return Err(CRAWError::IOError(error))
     }
 }
 
@@ -132,13 +170,13 @@ fn bytes_to_u16(bytes: &[u8], endianness: &[u8;2])->u16{
     }
 }
 
-fn save_image(raw_img: &[u8], output:&String, size:u16, orientation:u32)->Result<(), Error>{
+fn save_image(raw_img: &[u8], output:&String, size:u16, orientation:u32)->Result<(), CRAWError>{
     //!Sets image orientation, sizes it down and saves it in the output location
     //!The default value for the orientation should be 1, as that does not change it at all (horizontal)
     let loaded_img = load_from_memory_with_format(raw_img, image::ImageFormat::Jpeg);
     let mut img = match loaded_img{
         Ok(image) => image,
-        Err(_) => return Err(Error::new(ErrorKind::Other, "Failed loading the Image"))
+        Err(err) => return Err(CRAWError::ImageSavingError(err))
     };
 
     match orientation{
@@ -162,29 +200,27 @@ fn save_image(raw_img: &[u8], output:&String, size:u16, orientation:u32)->Result
     }
     img = img.thumbnail((img.width() as f32*size_factor)as u32, (img.width() as f32*size_factor)as u32);
     match img.save_with_format(output, image::ImageFormat::Png){
-        Ok(()) => {},
-        Err(_) => {return Err(Error::new(ErrorKind::Other, "Failed saving the Image"))}
+        Ok(()) => return Ok(()),
+        Err(err) => return Err(CRAWError::ImageSavingError(err))
     }
-    Ok(())
 }
 
 
-fn main() -> Result<(), Error>{
+fn main(){
     let args = Args::parse();
     let input: String = args.file;
     let output: String = args.output;
     let size: u16 = args.size;
     if input.ends_with("CRW") || input.ends_with("crw"){
-        crw::extract_thumb(&input, &output, size)?;
+        crw::extract_thumb(&input, &output, size).unwrap();
     }
     else if input.ends_with("CR2")|| input.ends_with("cr2"){
-        cr2::extract_thumb(&input, &output, size)?;
+        cr2::extract_thumb(&input, &output, size).unwrap();
     }
     else if input.ends_with("CR3")|| input.ends_with("cr3"){
-        cr3::extract_thumb(&input, &output, size)?;
+        cr3::extract_thumb(&input, &output, size).unwrap();
     }
     else{
-        return Err(Error::new(ErrorKind::Unsupported, "Unknown File type, are you sure that this is a Canon RAW File?"))
+        panic!("Unknown File type, are you sure that this is a Canon RAW File?");
     }
-    Ok(())
 }

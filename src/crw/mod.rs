@@ -1,6 +1,4 @@
-use std::io::{Error, ErrorKind};
-
-use crate::{bytes_to_u16, bytes_to_u32, read_file, save_image};
+use crate::{bytes_to_u16, bytes_to_u32, read_file, save_image, CRAWError};
 
 #[derive(Debug)]
 struct DirEntry{
@@ -25,7 +23,7 @@ impl DBS{
     }
 }
 
-fn parse_root_dir(raw_data: &Vec<u8>)->Result<DBS, Error>{
+fn parse_root_dir(raw_data: &Vec<u8>)->Result<DBS, CRAWError>{
     let mut dbs = DBS::new();
     let endianness = &[raw_data[0], raw_data[1]];
     let header_length = bytes_to_u32(&raw_data[2..=5], endianness);
@@ -33,7 +31,7 @@ fn parse_root_dir(raw_data: &Vec<u8>)->Result<DBS, Error>{
 
     dbs.dir_count = bytes_to_u16(&raw_data[root_dir_location as usize..=root_dir_location as usize+1], endianness);
     if root_dir_location+dbs.dir_count as u32*10>raw_data.len() as u32{
-        return Err(Error::new(ErrorKind::Other, "Root Directory is out of bounds."))
+        return Err(CRAWError::RootDirOutOfBoundsError)
     }
     let dir_data_start = root_dir_location+2;
     for i in 0..dbs.dir_count{
@@ -49,7 +47,7 @@ fn parse_root_dir(raw_data: &Vec<u8>)->Result<DBS, Error>{
     Ok(dbs)
 }
 
-fn get_thumbnail_data(raw_data: &Vec<u8>)->Result<(u32,u32), Error>{
+fn get_thumbnail_data(raw_data: &Vec<u8>)->Result<(u32,u32), CRAWError>{
     let endianness = &[raw_data[0], raw_data[1]];
     let header_length = bytes_to_u32(&raw_data[2..=5], endianness);
     let mut thumb_location: u32 = u32::MAX;
@@ -63,12 +61,12 @@ fn get_thumbnail_data(raw_data: &Vec<u8>)->Result<(u32,u32), Error>{
         }
     }
     if thumb_location==u32::MAX && thumb_size == u32::MAX{
-        return Err(Error::new(ErrorKind::NotFound, "Could not find the Directory Entry for the Thumbnail File."))
+        return Err(CRAWError::ThumbnailIfdEntryNotFound)
     }
     Ok((thumb_location + header_length, thumb_size))
 }
 
-pub fn extract_thumb(file_path: &String, output: &String, size: u16) -> Result<(),Error>{
+pub fn extract_thumb(file_path: &String, output: &String, size: u16) -> Result<(),CRAWError>{
     let raw_data = read_file(&file_path)?;
     let (thumb_loc,thumb_size) = get_thumbnail_data(&raw_data)?;
 
