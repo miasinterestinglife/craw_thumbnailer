@@ -39,7 +39,9 @@ pub enum CRAWError{
     CR2ImageDataNotFound{
         strip_ofs: u32,
         strip_count: u32
-    }
+    },
+    #[error("This is the wrong file type. Are you sure this is a valid file?")]
+    FileTypeError
 }
 
 #[derive(Parser, Debug)]

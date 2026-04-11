@@ -1,5 +1,7 @@
 use crate::{bytes_to_u16, bytes_to_u32, read_file, save_image, CRAWError};
 
+const CRW_MAGIC_NUM: [u8;9] = [0x48, 0x45, 0x41, 0x50, 0x43, 0x43, 0x44, 0x52, 0x02];
+
 #[derive(Debug)]
 struct DirEntry{
     tag_id: u16,
@@ -28,6 +30,10 @@ fn parse_root_dir(raw_data: &Vec<u8>)->Result<DBS, CRAWError>{
     let endianness = &[raw_data[0], raw_data[1]];
     let header_length = bytes_to_u32(&raw_data[2..=5], endianness);
     let root_dir_location = bytes_to_u32(&raw_data[raw_data.len()-4..=raw_data.len()-1], endianness) + header_length;
+
+    if &raw_data[0x06..=0x0E] != CRW_MAGIC_NUM{
+        return Err(CRAWError::FileTypeError)
+    }
 
     dbs.dir_count = bytes_to_u16(&raw_data[root_dir_location as usize..=root_dir_location as usize+1], endianness);
     if root_dir_location+dbs.dir_count as u32*10>raw_data.len() as u32{
